@@ -1,0 +1,36 @@
+set(_root_dir "${CMAKE_CURRENT_LIST_DIR}/..")
+if(EXISTS "${_root_dir}/include/m15/config.hpp")
+    file(STRINGS "${_root_dir}/include/m15/config.hpp" _m15_string
+                 REGEX ".*#ifndef.*M15_CONFIG_HPP.*")
+    if(NOT "${_m15_string}" STREQUAL "")
+        set(M15_ROOT_DIR "${_root_dir}")
+        set(M15_INCLUDE_DIRS "${_root_dir}/include")
+        set(M15_SOURCE_DIR "${_root_dir}/src")
+        set(M15_MODULE_CMAKE_DIR "${_root_dir}/include/m15")
+    endif()
+endif()
+
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(M15 DEFAULT_MSG M15_ROOT_DIR)
+
+include(CMakeParseArguments)
+
+#if (NOT DEFINED TARGET_CPU)
+#  message(FATAL_ERROR "The target CPU has not been defined.")
+#endif()
+
+function(m15_use_modules)
+    cmake_parse_arguments(_m15_use_modules_args "" "" "OPTIONS" ${ARGN})
+    if ("${_m15_use_modules_args_UNPARSED_ARGUMENTS}" STREQUAL "")
+        message(FATAL_ERROR "No module given in m15_use_modules().")
+    endif()
+
+    foreach(_module ${_m15_use_modules_args_UNPARSED_ARGUMENTS})
+        set(_module_cmake "${M15_MODULE_CMAKE_DIR}/m15-${_module}.cmake")
+        if (NOT EXISTS "${_module_cmake}")
+            message(FATAL_ERROR "There is no m15-module named '${_module}'.")
+        endif()
+        set(SUBMODULE_OPTIONS ${_m15_use_modules_args_OPTIONS})
+        include("${_module_cmake}")
+    endforeach()
+endfunction()
